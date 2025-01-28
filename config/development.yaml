@@ -1,0 +1,14 @@
+env: "dev"
+port: 8083
+mysql:
+  username: "root"
+  pass: "mysqlroot"
+  port: 3306
+sso:
+  secret: "YCFR4Bhwa3viuCozA3muI8mFs3yhUqRC7Q4CMSa8+C/u9ncHkcUjwdJ3lpKj+5rz3FvoDSPgdpnsLXyhgus1+A=="
+  app_id: 2
+  port: 8082
+  timeout: 1h
+openai:
+  api_key: "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"
+

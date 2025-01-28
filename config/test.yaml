@@ -1,0 +1,14 @@
+env: "test"
+port: 8080
+mysql:
+  username: "testuser"
+  pass: "testpass"
+  port: 3306
+sso:
+  secret: "testsecret"
+  app_id: 12345
+  port: 9090
+  timeout: 30s
+openai:
+  api_key: "123"
+

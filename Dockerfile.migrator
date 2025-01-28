@@ -1,0 +1,38 @@
+# Stage 1: Build the Go binary for the migrator
+FROM golang:1.22-alpine AS builder
+
+# Set the Current Working Directory inside the container
+WORKDIR /app
+
+# Copy go mod and sum files
+COPY go.mod go.sum ./
+
+# Download all dependencies. Dependencies will be cached if the go.mod and go.sum files are not changed
+RUN go mod download
+
+# Copy the source from the current directory to the Working Directory inside the container
+COPY . .
+
+# Set the working directory for the Go build command to the location of main.go for the migrator
+WORKDIR /app/cmd/migrator
+
+# Build the Go migrator app
+RUN go build -o /app/migrator .
+
+# Stage 2: Create a small image to run the migrator app
+FROM alpine:latest
+
+# Set the Current Working Directory inside the container
+WORKDIR /app
+
+# Copy the Pre-built binary file from the previous stage
+COPY --from=builder /app/migrator .
+
+# Copy the configuration file
+COPY ./config ./config
+
+# Copy the migrations
+COPY ./migrations ./migrations
+
+# Command to run the migrator with the specified config and migrations path
+CMD ["./migrator", "--config=/app/config/development.yaml", "--migrations-path=/app/migrations"]

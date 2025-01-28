@@ -1,0 +1,418 @@
+definitions:
+  schemas.ChatBot:
+    properties:
+      description:
+        type: string
+      id:
+        type: integer
+      instructions:
+        type: string
+      name:
+        type: string
+    type: object
+  schemas.ChatBotFiles:
+    properties:
+      files:
+        items:
+          $ref: '#/definitions/schemas.File'
+        type: array
+    type: object
+  schemas.File:
+    properties:
+      chat_bot_id:
+        type: integer
+      filename:
+        type: string
+      id:
+        type: integer
+    type: object
+  schemas.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  schemas.LoginResponse:
+    properties:
+      token:
+        type: string
+    type: object
+  schemas.RegisterRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  schemas.RegisterResponse:
+    properties:
+      id:
+        type: integer
+    type: object
+  schemas.RemoveChatBotResponse:
+    properties:
+      success:
+        type: boolean
+    type: object
+  schemas.RemoveFileResponse:
+    properties:
+      success:
+        type: boolean
+    type: object
+  schemas.SaveChatBotRequest:
+    properties:
+      description:
+        type: string
+      instructions:
+        type: string
+      name:
+        type: string
+    type: object
+  schemas.SaveChatBotResponse:
+    properties:
+      chat_bot_id:
+        type: integer
+    type: object
+  schemas.SaveFileResponse:
+    properties:
+      file_id:
+        type: integer
+    type: object
+  schemas.UpdateChatBotRequest:
+    properties:
+      description:
+        type: string
+      instructions:
+        type: string
+      name:
+        type: string
+    type: object
+  schemas.UpdateChatBotResponse:
+    properties:
+      success:
+        type: boolean
+    type: object
+  schemas.UpdatePlanRequest:
+    properties:
+      plan:
+        type: string
+    type: object
+  schemas.UpdatePlanResponse:
+    properties:
+      success:
+        type: boolean
+    type: object
+  schemas.User:
+    properties:
+      bots_left:
+        type: integer
+      bytes_data_left:
+        type: integer
+      email:
+        type: string
+      id:
+        type: integer
+      messages_left:
+        type: integer
+      plan:
+        type: string
+      plan_bought_date:
+        type: string
+    type: object
+  schemas.UserChatBots:
+    properties:
+      chat_bots:
+        items:
+          $ref: '#/definitions/schemas.ChatBot'
+        type: array
+    type: object
+info:
+  contact: {}
+  description: Bot Factory backend API written in Go Gin
+  title: Bot Factory API
+  version: "1.0"
+paths:
+  /api/v1/chat-bot/:
+    post:
+      description: Save chat-bot object to database
+      parameters:
+      - description: Chat bot
+        in: body
+        name: chat_bot
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.SaveChatBotRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.SaveChatBotResponse'
+      security:
+      - BearerAuth: []
+      summary: Saves chat-bot
+      tags:
+      - chat-bot
+  /api/v1/chat-bot/{chat-bot-id}/file/:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Saves a file to database and adds it to the chat-bot
+      parameters:
+      - description: Chat Bot ID
+        in: path
+        name: chat-bot-id
+        required: true
+        type: integer
+      - description: File to upload
+        in: formData
+        name: file
+        required: true
+        type: file
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.SaveFileResponse'
+      security:
+      - BearerAuth: []
+      summary: Saves a file
+      tags:
+      - file
+  /api/v1/chat-bot/{chat-bot-id}/files:
+    get:
+      description: Return chat-bot files meta-data from database
+      parameters:
+      - description: Chat Bot ID
+        in: path
+        name: chat-bot-id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.ChatBotFiles'
+      security:
+      - BearerAuth: []
+      summary: Get chat-bot files
+      tags:
+      - file
+  /api/v1/chat-bot/{id}:
+    delete:
+      description: Removes chat-bot object from database
+      parameters:
+      - description: Chat bot
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.RemoveChatBotResponse'
+      security:
+      - BearerAuth: []
+      summary: Removes chat-bot
+      tags:
+      - chat-bot
+    get:
+      description: Fetch chat-bot object from database by its ID
+      parameters:
+      - description: Chat-bot ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.ChatBot'
+      security:
+      - BearerAuth: []
+      summary: Fetches chat-bot by ID
+      tags:
+      - chat-bot
+    patch:
+      description: Update chat-bot object in database
+      parameters:
+      - description: Chat bot
+        in: body
+        name: chat_bot
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.UpdateChatBotRequest'
+      - description: Chat bot
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.UpdateChatBotResponse'
+      security:
+      - BearerAuth: []
+      summary: Updates chat-bot
+      tags:
+      - chat-bot
+  /api/v1/chat-bot/{id}/chat/ws:
+    get:
+      description: Starts chat with a chat-bot with id = chatBotID, opens a websocket
+        connection
+      parameters:
+      - description: Chat bot
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "101":
+          description: Switching Protocols
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Start chat with chat-bot
+      tags:
+      - chat-bot
+  /api/v1/file/{id}:
+    delete:
+      description: Removes a file from database and chat-bot
+      parameters:
+      - description: File ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.RemoveFileResponse'
+      security:
+      - BearerAuth: []
+      summary: Removes a file
+      tags:
+      - file
+    get:
+      description: Returns a file meta-data by its ID from the database
+      parameters:
+      - description: File ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.File'
+      security:
+      - BearerAuth: []
+      summary: Returns a file meta-data
+      tags:
+      - file
+  /api/v1/login/:
+    post:
+      description: Login user with email and password
+      parameters:
+      - description: Login credentials
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.LoginRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.LoginResponse'
+      summary: User login
+      tags:
+      - auth
+  /api/v1/register/:
+    post:
+      description: Register user with email and password
+      parameters:
+      - description: Register credentials
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.RegisterRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.RegisterResponse'
+      summary: User registration
+      tags:
+      - auth
+  /api/v1/user/:
+    get:
+      description: Fetch user data from database by session token
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.User'
+      security:
+      - BearerAuth: []
+      summary: Fetches user by token
+      tags:
+      - user
+    put:
+      description: 'Update user plan (Free: "free_plan", Business: "business_plan",
+        Enterprise: "enterprise_plan")'
+      parameters:
+      - description: Chat-bot ID
+        in: body
+        name: new-plan
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.UpdatePlanRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.UpdatePlanResponse'
+      security:
+      - BearerAuth: []
+      summary: Update user plan
+      tags:
+      - user
+  /api/v1/user/chat-bots:
+    get:
+      description: Returns all user chat-bots from database
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.UserChatBots'
+      security:
+      - BearerAuth: []
+      summary: Get all user chat-bots
+      tags:
+      - user
+securityDefinitions:
+  BearerAuth:
+    in: cookie
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

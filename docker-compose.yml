@@ -1,0 +1,88 @@
+version: '3.8'
+
+services:
+  sso:
+    image: sso:latest
+    container_name: sso-service
+    environment:
+      - CGO_ENABLED=1
+      - SSO_CONFIG_PATH=./config/local.yaml
+    ports:
+      - "8082:8082"  # Map SSO service port to host
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-service
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: mysqlroot
+      MYSQL_DATABASE: bot_factory
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  migrator:
+    build:
+      context: .
+      dockerfile: Dockerfile.migrator
+    container_name: migrator-service
+    restart: no
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql-service
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: mysqlroot
+      DB_NAME: bot_factory
+    command: /bin/sh -c "sleep 1 && ./migrator --config=/app/config/development.yaml --migrations-path=/app/migrations"
+
+  backend-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: backend-api
+    restart: always
+    ports:
+      - "8083:8083"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
+    environment:
+      DB_HOST: mysql-service
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: mysqlroot
+      DB_NAME: bot_factory
+      SSO_HOST: sso-service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: /bin/sh -c "sleep 2 && ./main --config=/app/config/development.yaml"
+
+  tg-bot:
+    image: tg-bot:latest
+    container_name: tg-bot
+    restart: always
+    depends_on:
+      backend-api:
+        condition: service_started
+    environment:
+      BACKEND_HOST: backend-api
+      BACKEND_PORT: 8083
+    command: /bin/sh -c "sleep 3 && ./tg-bot --config=./config/prod.yaml"
+
+volumes:
+  mysql_data:
+
